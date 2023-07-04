@@ -1,0 +1,31 @@
+{
+	"name": "@tumekee/homebridge-co",
+	"version": "1.1.1",
+	"main": "index.js",
+	"description": "This plugin shows a CO air quality accessory that will trigger when then threshold is met - Carbon monoxide ( CO ) NOT carbon dioxide( Co2 )",
+	"author": {
+		"name": "Adrian",
+		"url": "https://github.com/tumekee/"
+	},
+	"keywords": [
+		"homebridge-plugin",
+		"co",
+		"monoxide"
+	],
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/tumekee/homebridge-co"
+	},
+	"engines": {
+		"node": ">=12.18.3",
+		"homebridge": ">=1.1.6"
+	},
+	"dependencies": {
+		"axios": "^0.20.0",
+		"lodash": "^4.17.20"
+	},
+	"devDependencies": {
+		"homebridge": "^1.1.6"
+	}
+}
