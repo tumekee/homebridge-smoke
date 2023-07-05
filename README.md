@@ -4,7 +4,7 @@
 
 <span align="center">
 
-# homebridge-co
+# homebridge-smoke
 
 
 </span>
