@@ -10,7 +10,7 @@ module.exports = function (homebridge) {
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
 
-  homebridge.registerAccessory('homebridge-co-smoke-sensor', 'COSmokeSensor', COSmokeSensorAccessory);
+  homebridge.registerAccessory('homebridge-smoke', 'COSmokeSensor', COSmokeSensorAccessory);
 };
 
 /**
