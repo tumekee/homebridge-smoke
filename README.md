@@ -11,25 +11,28 @@
 
 ## Description
 
-This plugin shows a CO air quality accessory that will trigger when then threshold is met - Carbon monoxide ( CO ) NOT carbon dioxide( Co2 )
+This plugin shows 
+-Carbon monoxide ( CO ) NOT carbon dioxide( Co2 ) levels and has a detection alarm
+-Smoke detection
+
 
 Example config:
 ```
 {
-  "accessories": [
-    {
-      "accessory": "COSensor",
-      "name": "CO Sensor",
-      "url": "http://10.1.1.145",
-      "threshold": 50,
-      "pollingInterval": 60,
-      "coLevelPath": "co_level"
-    }
-  ]
-}
+            "accessory": "COSmokeSensor",
+            "name": "CO and Smoke Sensor",
+            "url": "http://10.1.1.145/json",
+            "thresholds": {
+                "co": 90,
+                "smoke": 70
+            },
+            "pollingInterval": 5,
+            "coLevelPath": "mq7_value",
+            "smokeDetectedPath": "mq2_value"
+        }
 
 ```
 
 
-response must be JSON default path is {"co_level": xx.xx}
+response must be JSON 
 
