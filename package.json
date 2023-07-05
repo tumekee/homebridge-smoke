@@ -2,7 +2,7 @@
 	"name": "@tumekee/homebridge-smoke",
 	"version": "1.0.0",
 	"main": "index.js",
-	"description": "This plugin shows a CO detection / alarm & smoke ( alarm only )
+	"description": "This plugin shows a CO detection / alarm & smoke ( alarm only )"
 	"author": {
 		"name": "Adrian",
 		"url": "https://github.com/tumekee/"
