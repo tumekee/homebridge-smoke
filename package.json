@@ -1,8 +1,8 @@
 {
 	"name": "@tumekee/homebridge-smoke",
-	"version": "1.1.1",
+	"version": "1.0.0",
 	"main": "index.js",
-	"description": "This plugin shows a CO air quality accessory that will trigger when then threshold is met - Carbon monoxide ( CO ) NOT carbon dioxide( Co2 )",
+	"description": "This plugin shows a CO detection / alarm & smoke ( alarm only )
 	"author": {
 		"name": "Adrian",
 		"url": "https://github.com/tumekee/"
@@ -15,7 +15,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/tumekee/homebridge-co"
+		"url": "https://github.com/tumekee/homebridge-smoke"
 	},
 	"engines": {
 		"node": ">=12.18.3",
