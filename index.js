@@ -10,7 +10,7 @@ module.exports = function (homebridge) {
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
 
-  homebridge.registerAccessory('homebridge-co-sensor', 'COSensor', COSensorAccessory);
+  homebridge.registerAccessory('homebridge-co-smoke-sensor', 'COSmokeSensor', COSmokeSensorAccessory);
 };
 
 /**
@@ -18,118 +18,146 @@ module.exports = function (homebridge) {
  * @param {Object} config
  * @constructor
  */
-function COSensorAccessory(log, config) {
+function COSmokeSensorAccessory(log, config) {
   this.log = log;
   this.name = config.name;
   this.url = config.url;
-  this.threshold = config.threshold || 30; // Default threshold value of 30 ppm
+  this.thresholds = config.thresholds || { co: 30, smoke: 1 }; // Default thresholds of 30 ppm for CO and 1 for smoke
   this.pollingInterval = config.pollingInterval || 60; // Default polling interval of 60 seconds
-  this.coLevelPath = config.coLevelPath || 'co_level'; // Custom JSON path for CO level
+  this.coLevelPath = config.coLevelPath || 'mq7_value'; // Custom JSON path for CO level
+  this.smokeDetectedPath = config.smokeDetectedPath || 'mq2_value'; // Custom JSON path for smoke detected
 
-  this.service = new Service.CarbonMonoxideSensor(this.name);
+  this.coService = new Service.CarbonMonoxideSensor(this.name + ' CO');
+  this.smokeService = new Service.SmokeSensor(this.name + ' Smoke');
 
-  this.service
+  this.coService
     .getCharacteristic(Characteristic.CarbonMonoxideDetected)
     .on('get', this.getCOStatus.bind(this));
 
-  this.service
+  this.coService
     .getCharacteristic(Characteristic.CarbonMonoxideLevel)
     .on('get', this.getCOLevel.bind(this));
+
+  this.smokeService
+    .getCharacteristic(Characteristic.SmokeDetected)
+    .on('get', this.getSmokeStatus.bind(this));
 
   this.informationService = new Service.AccessoryInformation();
   this.informationService
     .setCharacteristic(Characteristic.Manufacturer, 'Homebridge')
-    .setCharacteristic(Characteristic.Model, 'CO_Sensor')
+    .setCharacteristic(Characteristic.Model, 'CO_Smoke_Sensor')
     .setCharacteristic(Characteristic.SerialNumber, packageJson.version);
 
-  // Update CO status and level by interval
+  // Update CO and smoke status and level by interval
   setInterval(() => {
-    this.getCOStatus((err, status) => {
+    this.getData((err, data) => {
       if (err) {
-        this.log(`Failed to fetch CO status: ${err}`);
+        this.log(`Failed to fetch sensor data: ${err}`);
         return;
       }
-      this.service
+      const coLevel = this.getValueFromData(data, this.coLevelPath);
+      const smokeDetected = this.getValueFromData(data, this.smokeDetectedPath) > this.thresholds.smoke;
+      this.log(`Sensor Data - CO Level: ${coLevel}, Smoke Detected: ${smokeDetected}`);
+      this.coService
         .getCharacteristic(Characteristic.CarbonMonoxideDetected)
-        .updateValue(status);
-    });
-
-    this.getCOLevel((err, level) => {
-      if (err) {
-        this.log(`Failed to fetch CO level: ${err}`);
-        return;
-      }
-      this.service
+        .updateValue(coLevel > this.thresholds.co);
+      this.coService
         .getCharacteristic(Characteristic.CarbonMonoxideLevel)
-        .updateValue(level);
+        .updateValue(coLevel);
+      this.smokeService
+        .getCharacteristic(Characteristic.SmokeDetected)
+        .updateValue(smokeDetected);
     });
   }, this.pollingInterval * 1000);
 }
 
 /**
- * @name COSensorAccessory#getCOStatus
+ * @name COSmokeSensorAccessory#getData
  * @function
  */
-COSensorAccessory.prototype.getCOStatus = function (callback) {
+COSmokeSensorAccessory.prototype.getData = function (callback) {
   axios.get(this.url)
     .then(response => {
       const data = response.data;
-      const coLevel = this.getCOValueFromData(data);
-      this.log(`CO level: ${coLevel}`);
-      const isCODetected = coLevel > this.threshold; // Compare with the threshold
-      callback(null, isCODetected);
+      callback(null, data);
     })
     .catch(error => {
-      this.log(`Failed to fetch CO level: ${error}`);
       callback(error);
     });
 };
 
 /**
- * @name COSensorAccessory#getCOLevel
+ * @name COSmokeSensorAccessory#getValueFromData
  * @function
  */
-COSensorAccessory.prototype.getCOLevel = function (callback) {
-  axios.get(this.url)
-    .then(response => {
-      const data = response.data;
-      const coLevel = this.getCOValueFromData(data);
-      this.log(`CO level: ${coLevel}`);
-      callback(null, coLevel);
-    })
-    .catch(error => {
-      this.log(`Failed to fetch CO level: ${error}`);
-      callback(error);
-    });
-};
-
-/**
- * @name COSensorAccessory#getCOValueFromData
- * @function
- */
-COSensorAccessory.prototype.getCOValueFromData = function (data) {
-  let coLevel = 0;
-
+COSmokeSensorAccessory.prototype.getValueFromData = function (data, path) {
   try {
-    const pathParts = this.coLevelPath.split('.');
+    const pathParts = path.split('.');
     let value = data;
 
     for (const part of pathParts) {
       value = value[part];
     }
 
-    coLevel = parseFloat(value);
+    return value;
   } catch (error) {
-    this.log(`Failed to extract CO level from data: ${error}`);
+    this.log(`Failed to extract value from data: ${error}`);
+    return null;
   }
-
-  return coLevel;
 };
 
 /**
- * @name COSensorAccessory#getServices
+ * @name COSmokeSensorAccessory#getCOStatus
  * @function
  */
-COSensorAccessory.prototype.getServices = function () {
-  return [this.service, this.informationService];
+COSmokeSensorAccessory.prototype.getCOStatus = function (callback) {
+  this.getData((err, data) => {
+    if (err) {
+      this.log(`Failed to fetch sensor data: ${err}`);
+      callback(err);
+      return;
+    }
+    const coLevel = this.getValueFromData(data, this.coLevelPath);
+    callback(null, coLevel > this.thresholds.co);
+  });
+};
+
+/**
+ * @name COSmokeSensorAccessory#getCOLevel
+ * @function
+ */
+COSmokeSensorAccessory.prototype.getCOLevel = function (callback) {
+  this.getData((err, data) => {
+    if (err) {
+      this.log(`Failed to fetch sensor data: ${err}`);
+      callback(err);
+      return;
+    }
+    const coLevel = this.getValueFromData(data, this.coLevelPath);
+    callback(null, coLevel);
+  });
+};
+
+/**
+ * @name COSmokeSensorAccessory#getSmokeStatus
+ * @function
+ */
+COSmokeSensorAccessory.prototype.getSmokeStatus = function (callback) {
+  this.getData((err, data) => {
+    if (err) {
+      this.log(`Failed to fetch sensor data: ${err}`);
+      callback(err);
+      return;
+    }
+    const smokeDetected = this.getValueFromData(data, this.smokeDetectedPath) > this.thresholds.smoke;
+    callback(null, smokeDetected);
+  });
+};
+
+/**
+ * @name COSmokeSensorAccessory#getServices
+ * @function
+ */
+COSmokeSensorAccessory.prototype.getServices = function () {
+  return [this.coService, this.smokeService, this.informationService];
 };
