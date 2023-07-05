@@ -13,6 +13,7 @@
 
 This plugin shows 
 -Carbon monoxide ( CO ) NOT carbon dioxide( Co2 ) levels and has a detection alarm
+
 -Smoke detection
 
 
